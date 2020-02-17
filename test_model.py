@@ -20,6 +20,7 @@ bins             = 8
 global_feature = []
 
 
+
 def fd_hu_moments(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     feature = cv2.HuMoments(cv2.moments(image)).flatten()
@@ -45,15 +46,12 @@ def fd_histogram(image, mask=None):
     # return the histogram
     return hist.flatten()
 
-def train(trainDataGlobal,trainLabelsGlobal,train_labels):
-    # create the model - Random Forests
-    clf  = RandomForestClassifier(n_estimators=num_trees, random_state=seed)
-
-    # fit the training data to the model
-    clf.fit(trainDataGlobal, trainLabelsGlobal)
-
+def train(model,train_labels):
+    count = 0
+    test_results = []
     # loop through the test images
     for file in glob.glob(test_path + "/*.jpg"):
+        file_name = file.replace(test_path+'\\','')
         # read the image
         image = cv2.imread(file)
 
@@ -77,11 +75,60 @@ def train(trainDataGlobal,trainLabelsGlobal,train_labels):
         rescaled_feature = scaler.fit_transform(global_feature)
 
         # predict label of test image
-        prediction = clf.predict(rescaled_feature.reshape(1,-1))[0]
+        prediction = model.predict(rescaled_feature)[0]
+        test_results.append([file_name,train_labels[prediction]])
+    #     if(train_labels[prediction]==test_name):
+    #         count = count +1
+    #
+    # print ("result %s : %d" %(test_name,count))
+    #     show predicted label on image
+    #     cv2.putText(image, train_labels[prediction], (20,30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,255), 3)
+    #
+    #     # display the output image
+    #     plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    #     plt.show()
+    return (test_results)
 
-        # show predicted label on image
-        cv2.putText(image, train_labels[prediction], (20,30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,255), 3)
 
-        # display the output image
-        plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        plt.show()
+# def train(model,train_labels,test_name,dir):
+#     count = 0
+#     test_results = []
+#     # loop through the test images
+#     for file in glob.glob(dir + "/*.jpg"):
+#         file_name = file.replace(dir,'')
+#         # read the image
+#         image = cv2.imread(file)
+#
+#         # resize the image
+#         image = cv2.resize(image, fixed_size)
+#
+#         ####################################
+#         # Global Feature extraction
+#         ####################################
+#         fv_hu_moments = fd_hu_moments(image)
+#         fv_haralick   = fd_haralick(image)
+#         fv_histogram  = fd_histogram(image)
+#
+#         ###################################
+#         # Concatenate global features
+#         ###################################
+#         global_feature.append(np.hstack([fv_histogram, fv_haralick, fv_hu_moments]))
+#
+#         # scale features in the range (0-1)
+#         scaler = MinMaxScaler(feature_range=(0, 1))
+#         rescaled_feature = scaler.fit_transform(global_feature)
+#
+#         # predict label of test image
+#         prediction = model.predict(rescaled_feature)[0]
+#         test_results.append([file_name,train_labels[prediction]])
+#         if(train_labels[prediction]==test_name):
+#             count = count +1
+#
+#     print ("result %s : %d" %(test_name,count))
+#         # show predicted label on image
+#         # cv2.putText(image, train_labels[prediction], (20,30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,255), 3)
+#         #
+#         # # display the output image
+#         # plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+#         # plt.show()
+#     return (test_results)

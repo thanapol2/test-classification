@@ -1,6 +1,8 @@
 #-----------------------------------
 # TRAINING OUR MODEL
 #-----------------------------------
+import csv
+
 import h5py
 import numpy as np
 import os
@@ -8,7 +10,7 @@ import glob
 import cv2
 import warnings
 from matplotlib import pyplot
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split, cross_val_score, cross_validate
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
 from sklearn.linear_model import LogisticRegression
@@ -35,6 +37,7 @@ test_path  = "dataset/test"
 h5_data    = 'output/data.h5'
 h5_labels  = 'output/labels.h5'
 scoring    = "accuracy"
+csv_result = "test_result/"
 fixed_size = tuple((500, 500))
 
 # get the training labels
@@ -48,14 +51,14 @@ if not os.path.exists(test_path):
 
 # create all the machine learning models
 models = []
-models.append(('LR', LogisticRegression(random_state=seed)))
-models.append(('LDA', LinearDiscriminantAnalysis()))
+# models.append(('LR', LogisticRegression(random_state=seed)))
+# models.append(('LDA', LinearDiscriminantAnalysis()))
 models.append(('KNN', KNeighborsClassifier()))
-models.append(('CART', DecisionTreeClassifier(random_state=seed)))
+# models.append(('CART', DecisionTreeClassifier(random_state=seed)))
 models.append(('RF', RandomForestClassifier(n_estimators=num_trees, random_state=seed)))
-models.append(('NB', GaussianNB()))
-models.append(('SVM', SVC(random_state=seed)))
-
+# models.append(('NB', GaussianNB()))
+# models.append(('SVM', SVC(random_state=seed)))
+fit_models = []
 # variables to hold the results and names
 results = []
 names   = []
@@ -94,17 +97,41 @@ print("Test labels : {}".format(testLabelsGlobal.shape))
 # 10-fold cross validation
 for name, model in models:
     kfold = KFold(n_splits=10, random_state=seed)
-    cv_results = cross_val_score(model, trainDataGlobal, trainLabelsGlobal, cv=kfold, scoring=scoring)
+    # cv_results = cross_val_score(model, trainDataGlobal, trainLabelsGlobal, cv=kfold, scoring=scoring)
+    cv = cross_validate(model, trainDataGlobal, trainLabelsGlobal, cv=kfold, scoring=scoring)
+    cv_results = cv['test_score']
+    # cv_model = cv['estimator']
+    clf = model.fit(trainDataGlobal,trainLabelsGlobal)
+    clf_score = clf.score(testDataGlobal,testLabelsGlobal)
     results.append(cv_results)
     names.append(name)
-    msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+    fit_models.append(clf)
+    # print(name +' : ' + cv_results.mean()+',')
+    msg = "%s: %f (%f) , %f" % (name, cv_results.mean(), cv_results.std(),clf_score)
     print(msg)
 
 # boxplot algorithm comparison
 fig = pyplot.figure()
 fig.suptitle('Machine Learning algorithm comparison')
 ax = fig.add_subplot(111)
-pyplot.boxplot(results)
-ax.set_xticklabels(names)
-pyplot.show()
-tm.train(trainDataGlobal,trainLabelsGlobal,train_labels)
+# pyplot.boxplot(results)
+# ax.set_xticklabels(names)
+# pyplot.show()
+
+# test model with unknow
+for name, model in models:
+
+    # sort the training labels
+    # employee_writer.writerow(['John Smith', 'Accounting', 'November'])
+    # employee_writer.writerow(['Erica Meyers', 'IT', 'March'])
+    print("[STATUS] training started...with %s" %(name))
+    test_results = tm.train(model,train_labels)
+    # add result to CSV file
+    csv_name = os.path.join(csv_result, name+'.csv')
+    with open(csv_name, 'w+') as csv_file:
+        csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for test_result in test_results:
+            csv_writer.writerow([test_result[0],test_result[1]])
+    csv_file.close()
+    print("[STATUS] training finished.... with %s" %(name))
+
