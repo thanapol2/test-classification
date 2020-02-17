@@ -14,9 +14,13 @@ import h5py
 #--------------------
 images_per_class = 80
 fixed_size       = tuple((500, 500))
-train_path       = "dataset\\train"
+# train_path       = "dataset\\train\\leaf"
+# h5_data          = 'output\\data_leaf.h5'
+# h5_labels        = 'output\\labels_leaf.h5'
+train_path       = "dataset\\train\\flower"
 h5_data          = 'output\\data.h5'
 h5_labels        = 'output\\labels.h5'
+
 bins             = 8
 
 # feature-descriptor-1: Hu Moments
@@ -65,11 +69,12 @@ for training_name in train_labels:
     current_label = training_name
 
     # loop over the images in each sub-folder
+    file_list = []
     for x in range(1,images_per_class+1):
         # get the image file name
         try:
             file = dir + "\\" + str(x) + ".jpg"
-            # print(file)
+            file_list.append(file)
             # read the image and resize it to a fixed-size
             image = cv2.imread(file)
             image = cv2.resize(image, fixed_size)
@@ -94,6 +99,8 @@ for training_name in train_labels:
         except Exception as e:
             print(training_name)
 
+    print("[STATUS] processed listfile: ")
+    print(file_list)
     print("[STATUS] processed folder: {}".format(current_label))
 
 print("[STATUS] completed Global Feature Extraction...")

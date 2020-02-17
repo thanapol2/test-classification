@@ -23,7 +23,6 @@ from sklearn.svm import SVC
 from sklearn.externals import joblib
 import test_model as tm
 
-
 warnings.filterwarnings('ignore')
 
 #--------------------
@@ -32,14 +31,17 @@ warnings.filterwarnings('ignore')
 num_trees = 100
 test_size = 0.20
 seed      = 9
-train_path = "dataset/train"
-test_path  = "dataset/test"
+# train_path = "dataset/train/leaf"
+# test_path  = "dataset/test/leaf"
+# h5_data    = 'output/data_leaf.h5'
+# h5_labels  = 'output/labels_leaf.h5'
+train_path = "dataset/train/flower"
+test_path  = "dataset/test/flower/test"
 h5_data    = 'output/data.h5'
 h5_labels  = 'output/labels.h5'
 scoring    = "accuracy"
 csv_result = "test_result/"
 fixed_size = tuple((500, 500))
-
 # get the training labels
 train_labels = os.listdir(train_path)
 
@@ -53,15 +55,14 @@ if not os.path.exists(test_path):
 models = []
 # models.append(('LR', LogisticRegression(random_state=seed)))
 # models.append(('LDA', LinearDiscriminantAnalysis()))
-models.append(('KNN', KNeighborsClassifier()))
-# models.append(('CART', DecisionTreeClassifier(random_state=seed)))
-models.append(('RF', RandomForestClassifier(n_estimators=num_trees, random_state=seed)))
+# models.append(('KNN', KNeighborsClassifier()))
+models.append(('CART', DecisionTreeClassifier(random_state=seed)))
+# models.append(('RF', RandomForestClassifier(n_estimators=num_trees, random_state=seed)))
 # models.append(('NB', GaussianNB()))
 # models.append(('SVM', SVC(random_state=seed)))
-fit_models = []
 # variables to hold the results and names
 results = []
-names   = []
+
 
 # import the feature vector and trained labels
 h5f_data  = h5py.File(h5_data, 'r')
@@ -104,8 +105,7 @@ for name, model in models:
     clf = model.fit(trainDataGlobal,trainLabelsGlobal)
     clf_score = clf.score(testDataGlobal,testLabelsGlobal)
     results.append(cv_results)
-    names.append(name)
-    fit_models.append(clf)
+
     # print(name +' : ' + cv_results.mean()+',')
     msg = "%s: %f (%f) , %f" % (name, cv_results.mean(), cv_results.std(),clf_score)
     print(msg)
@@ -120,12 +120,8 @@ ax = fig.add_subplot(111)
 
 # test model with unknow
 for name, model in models:
-
-    # sort the training labels
-    # employee_writer.writerow(['John Smith', 'Accounting', 'November'])
-    # employee_writer.writerow(['Erica Meyers', 'IT', 'March'])
     print("[STATUS] training started...with %s" %(name))
-    test_results = tm.train(model,train_labels)
+    test_results = tm.train(model,train_labels,test_path)
     # add result to CSV file
     csv_name = os.path.join(csv_result, name+'.csv')
     with open(csv_name, 'w+') as csv_file:
