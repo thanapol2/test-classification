@@ -13,7 +13,7 @@ digits = load_digits()
 #     ax = fig.add_subplot(8, 8, i + 1, xticks=[], yticks=[])
 #     ax.imshow(digits.images[i], cmap=pyplot.cm.binary, interpolation='nearest')
 # pyplot.show()
-
+print(digits.data.shape)
 pca = PCA(n_components=2)
 proj = pca.fit_transform(digits.data)
 pyplot.scatter(proj[:, 0], proj[:, 1], c=digits.target)
