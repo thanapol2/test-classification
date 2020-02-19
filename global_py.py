@@ -12,12 +12,12 @@ import h5py
 #--------------------
 # tunable-parameters
 #--------------------
-images_per_class = 80
+images_per_class = 1
 fixed_size       = tuple((500, 500))
 # train_path       = "dataset\\train\\leaf"
 # h5_data          = 'output\\data_leaf.h5'
 # h5_labels        = 'output\\labels_leaf.h5'
-train_path       = "dataset\\train\\flower"
+train_path       = "dataset\\train\\test"
 h5_data          = 'output\\data.h5'
 h5_labels        = 'output\\labels.h5'
 
