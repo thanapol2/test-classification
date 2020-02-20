@@ -4,12 +4,12 @@ import numpy as np
 import mahotas
 import cv2
 import os
-import h5py
 from sklearn.decomposition import PCA
 from matplotlib import pyplot
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+import glob
 
 def fd_haralick(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -18,17 +18,27 @@ def fd_haralick(image):
     # return the result
     return haralick
 
-images_per_class = 30
+def fd_histogram(image, mask=None):
+    # convert the image to HSV color-space
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    # compute the color histogram
+    hist  = cv2.calcHist([image], [0, 1, 2], None, [bins, bins, bins], [0, 256, 0, 256, 0, 256])
+    # normalize the histogram
+    cv2.normalize(hist, hist)
+    # return the histogram
+    return hist.flatten()
+
+images_per_class = 50
 fixed_size       = tuple((500, 500))
-h5_data          = 'output\\data_pca.h5'
-h5_labels        = 'output\\labels_pca.h5'
-train_path       = "dataset\\train\\test"
-reshape_size  = tuple((500,-1))
+class_pre = 'daisy'
+train_path       = "dataset\\train\\flower"
+test_path       = "dataset\\test\\flower\\"+class_pre
 test_size = 0.20
 seed      = 9
 test_image = 'daisy.jpg'
 # get the training labels
 train_labels = os.listdir(train_path)
+bins    = 8
 
 # sort the training labels
 train_labels.sort()
@@ -37,7 +47,8 @@ print(train_labels)
 # empty lists to hold feature vectors and labels
 global_images = []
 labels          = []
-
+test_images = []
+test_lables = []
 
 pca = PCA(n_components=2)
 for training_name in train_labels:
@@ -55,6 +66,7 @@ for training_name in train_labels:
             image = cv2.imread(file)
             image = cv2.resize(image, fixed_size)
             haralick = fd_haralick(image)
+            histogram  = fd_histogram(image)
             # print(image.shape)
         except Exception as e:
             print(file)
@@ -66,23 +78,31 @@ for training_name in train_labels:
 
         # update the list of labels and feature vectors
         labels.append(current_label)
-        global_images.append(haralick)
+        global_images.append(np.hstack([haralick,histogram]))
 
-# proj = pca.fit_transform(digits.data)
-# pyplot.scatter(proj[:, 0], proj[:, 1], c=digits.target)
-#
-# pyplot.colorbar()
-#
-# pyplot.show()
+# test folder
+for test_file in glob.glob(test_path + "/*.jpg"):
+    try:
+        file_name = test_file.replace(test_path + '\\', '')
+        dir_test_file = dir + "\\"+file_name
+        image = cv2.imread(dir_test_file)
+        image = cv2.resize(image, fixed_size)
+        haralick = fd_haralick(image)
+        histogram = fd_histogram(image)
+    except Exception as e:
+        print(file)
+        print(str(e))
+    test_lables.append(file_name)
+    test_images.append(np.hstack([haralick,histogram]))
 
+a = np.array(labels)
 X_train, X_test, y_train, y_test = train_test_split(np.array(global_images),
                                                     np.array(labels),
-                                                    test_size=test_size,
-                                                    random_state=seed)
+                                                    test_size=test_size)
 
 models = []
-models.append(('KNN', KNeighborsClassifier()))
 models.append(('RF', RandomForestClassifier(n_estimators=100, random_state=9)))
+models.append(('KNN', KNeighborsClassifier()))
 
 print(X_train.shape)
 # X_t_train = pca.fit_transform(X_train)
@@ -91,12 +111,19 @@ print(X_train.shape)
 for name ,model in models:
     model.fit(X_train, y_train)
     # use the model to predict the labels of the test data
-    predicted = model.predict(X_test)
-    expected = y_test
-
     model_score = model.score(X_test, y_test)
+    predicted = model.predict(np.array(X_test))
+    expected = np.array(y_test)
+    # print(predicted)
+    # print(expected)
+    predicted = model.predict(np.array(test_images))
+    expected = np.array(test_lables)
+    count = 0
     print(predicted)
+    for i in predicted:
+        if i == class_pre:
+            count = count + 1
     #
     print(expected)
-    msg = "%s: %f " % (name,model_score)
+    msg = "%s: %f , act = %f" % (name,model_score,count/len(expected))
     print(msg)

@@ -22,7 +22,7 @@ pyplot.colorbar()
 
 pyplot.show()
 
-
+a = digits.target
 
 # split the data into training and validation sets
 X_train, X_test, y_train, y_test = train_test_split(digits.data, digits.target)
@@ -42,8 +42,8 @@ for name ,model in models:
     expected = y_test
 
     model_score = model.score(X_t_test, y_test)
-    # print(predicted)
-    #
-    # print(expected)
+    print(predicted)
+
+    print(expected)
     msg = "%s: %f " % (name,model_score)
     print(msg)
